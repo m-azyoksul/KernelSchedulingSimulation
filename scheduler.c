@@ -277,15 +277,12 @@ int srjfAverageTurnaround(int n, struct processData processDatas[]) {
     int sumTurnaroundTime = 0;
     struct processData cur;
 
-    printf("i:%d, n:%d\n",i,n);
-
     while (i < n || head != NULL) {
         // Add processes with arrival times smaller than currentTime to queue
         while (i < n && processDatas[i].arrival <= currentTime) {
             printf("Enqueue process with id %d\n", processDatas[i].pid);
             enqueueByBurst(&head, processDatas[i]);
             i++;
-            printf("-i:%d, n:%d\n",i,n);
         }
 
         // If the queue is empty, then increment currentTime
@@ -296,9 +293,9 @@ int srjfAverageTurnaround(int n, struct processData processDatas[]) {
         }
 
         // Get the next process
-        printf("head:%d", (*head).data);
+        /*printf("head:%d", (*head).data);
         printf(" i:%d", i);
-        printf(" n:%d\n", n);
+        printf(" n:%d\n", n);*/
         cur = dequeue(&head);
 
         if(i==n) {
@@ -309,7 +306,6 @@ int srjfAverageTurnaround(int n, struct processData processDatas[]) {
         }
         // If the burst of cur is less than or equal to the processDatas[i].arrival - currentTime
         else if (cur.burst <= processDatas[i].arrival - currentTime) {
-            printf(" cur burst:%d\n", cur.burst);
             // Elapse the time for the current process
             currentTime += cur.burst;
 
@@ -317,9 +313,6 @@ int srjfAverageTurnaround(int n, struct processData processDatas[]) {
             sumTurnaroundTime += currentTime - cur.arrival;
 
             printf("Finish process with id %d. Arrival time: %d, Current time: %d\n", cur.pid, cur.arrival, currentTime);
-            printf("---head:%d", (*head).data);
-            printf(" i:%d", i);
-            printf(" n:%d\n", n);
         } else {
 
             // Run until next process arrives
@@ -356,6 +349,9 @@ int rrAverageTurnaround(int n, struct processData processDatas[], int quantum) {
     int sumTurnaroundTime = 0;
     struct processData cur;
 
+    printf("Start time:%d\n", currentTime);
+    printf("quantum:%d\n", quantum);
+
     while (i < n || head != NULL) {
         // Add propcesses with arrival times smaller than currentTime to queue
         while (i < n && processDatas[i].arrival <= currentTime) {
@@ -377,10 +373,10 @@ int rrAverageTurnaround(int n, struct processData processDatas[], int quantum) {
         // If the burst of cur is less time quantum
         if (cur.burst <= quantum) {
             // Elapse the time for the current process
-            currentTime += cur.burst;
+            currentTime = currentTime + cur.burst;
 
             // Add the turn around time
-            sumTurnaroundTime += currentTime - cur.arrival;
+            sumTurnaroundTime = sumTurnaroundTime + currentTime - cur.arrival;
 
             printf("Finish process with id %d. Arrival time: %d, Current time: %d\n", cur.pid, cur.arrival, currentTime);
         } else {
@@ -388,13 +384,13 @@ int rrAverageTurnaround(int n, struct processData processDatas[], int quantum) {
             cur.burst -= quantum;
 
             // Elapse the time for the current process
-            currentTime += quantum;
+            currentTime = currentTime + quantum;
 
             printf("Run process with id %d a full cycle. Current time: %d\n", cur.pid, currentTime);
 
             // Add processes with arrival times smaller than currentTime to queue
             while (i < n && processDatas[i].arrival <= currentTime) {
-                printf(".Enqueue process with id %d\n", processDatas[i].pid);
+                printf("Enqueue process with id %d\n", processDatas[i].pid);
                 enqueue(&head, processDatas[i]);
                 i++;
                 printQueue(head);
@@ -404,36 +400,25 @@ int rrAverageTurnaround(int n, struct processData processDatas[], int quantum) {
             enqueue(&head, cur);
         }
     }
-
     return sumTurnaroundTime / n;
 }
 //************************************* ALGOS END *************************************//
 
 //************************************* MAIN *************************************//
-int main() {
-    /*struct processData processDatas[] = {
-    	{1, 0, 5},
-    	{2, 2, 2},
-    	{3, 6, 12},
-    	{4, 3, 2}};*/
+int main(int argc, char *argv[]) {
 
-    /*struct processData processDatas[] = {
-    	{1, 0, 4},
-    	{2, 12, 5},
-    	{3, 6, 12},
-    	{4, 8, 13}};*/
+    char* filename = argv[1];
+    int quantum = atoi(argv[2]);
 
-    struct Array fileData = getProcessDatas("inputs.txt");
-    struct processData* processDatas = fileData.array;
-    int n = fileData.used;
-
-    //int n = 4;
-
-    /*for(int i = 0; i < n; i++) {
-    	printf("Arrival\t: %d, %d\n", processDatas[i].arrival, fileData.array[i].arrival);
+    if(quantum<10 || quantum>300) {
+    printf("Time quantum should be between 10-300.\nPlease re-run the program...\n");
+    exit(0);
     }
 
-    printArray(processDatas, n);*/
+    struct Array fileData = getProcessDatas(filename);
+
+    struct processData* processDatas = fileData.array;
+    int n = fileData.used;
 
     // Sort processDatas according to arrival times.
     quickSortProcessDatas(processDatas, 0, n - 1);
@@ -443,16 +428,17 @@ int main() {
     int fcfs = fcfsAverageTurnaround(n, processDatas);
     int sjf = sjfAverageTurnaround(n, processDatas);
     int srjf = srjfAverageTurnaround(n, processDatas);
-    int rr = rrAverageTurnaround(n, processDatas, 10); // TODO: Get quantum
+    int rr = rrAverageTurnaround(n, processDatas, quantum);
 
     // Print the results
-    printf("FCFS %d\n", fcfs);
-    printf("SJF %d\n", sjf);
-    printf("SRJF %d\n", srjf);
-    printf("RR %d\n", rr);
+    printf("*************************\n");
+    printf("*\tFCFS\t%d\t*\n", fcfs);
+    printf("*\tSJF\t%d\t*\n", sjf);
+    printf("*\tSRJF\t%d\t*\n", srjf);
+    printf("*\tRR\t%d\t*\n", rr);
+    printf("*************************\n");
 
     //freeArray(&fileData);
-
     return 0;
 }
 //************************ MAIN END ************************//
